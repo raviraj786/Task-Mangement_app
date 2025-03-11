@@ -7,7 +7,6 @@ import {
   IconButton,
   Divider,
 } from "react-native-paper";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { deleteTask, fetchtasks } from "../../redux/tasksSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { router, useFocusEffect } from "expo-router";
@@ -19,7 +18,8 @@ const Index = () => {
   const dispatch = useDispatch();
   const { tasks, loading } = useSelector((state) => state.tasks);
 
-  // Jab bhi screen focus mein aaye, tasks refresh ho
+  console.log(tasks.data.Tasks)
+
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchtasks());
@@ -37,8 +37,9 @@ const Index = () => {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          dispatch(deleteTask(id));
+        onPress: async () => {
+          await dispatch(deleteTask(id));
+          dispatch(fetchtasks());
         },
       },
     ]);
@@ -56,22 +57,24 @@ const Index = () => {
       <Card.Content>
         <View style={styles.taskHeader}>
           <Text variant="titleLarge" style={styles.taskTitle}>
-            {item.title.length > 20
+            {item?.title?.length > 20
               ? `${item.title.slice(0, 20)}...`
-              : item.title}
+              : item?.title}
           </Text>
           <View style={styles.iconContainer}>
             <IconButton
               icon="pencil"
               size={20}
-              onPress={() => router.push(`/DetailsTaskScreen/${item.id}`)}
+              onPress={() =>
+                router.push(`/DetailsTaskScreen/${item.id || item._id}`)
+              }
               style={styles.iconButton}
               iconColor="#000"
             />
             <IconButton
               icon="delete"
               size={20}
-              onPress={() => handleDelete(item.id)}
+              onPress={() => handleDelete(item.id || item._id)}
               style={styles.iconButton}
               iconColor="#000"
             />
@@ -79,9 +82,12 @@ const Index = () => {
         </View>
         <Divider style={styles.divider} />
         <Text variant="bodyMedium" style={styles.taskDescription}>
-          {item.description.length > 70
+          {item?.description?.length > 70
             ? `${item.description.slice(0, 70)}...`
-            : item.description}
+            : item?.description}
+        </Text>
+        <Text style={styles.dateText}>
+          {new Date(item?.createAt).toLocaleString()}
         </Text>
       </Card.Content>
     </Card>
@@ -89,45 +95,37 @@ const Index = () => {
 
   return (
     <View style={styles.container}>
-      {tasks?.data?.Tasks?.length === 0 ? (
-        <Text style={{ textAlign: "center", marginTop: 20  , color:"#000" }}>
-          No tasks available.
-        </Text>
-      ) : (
+      {loading && (!tasks || !tasks?.data?.Tasks || tasks?.data?.Tasks?.length === 0) ? (
+        <ActivityIndicator size="large" color="#A0AEC0" />
+      ) : tasks?.data.Tasks?.length > 0 ? (
         <FlatList
-          data={
-            tasks?.data?.Tasks?.length > 0
-              ? tasks?.data?.Tasks.slice(0, page * ITEMS_PER_PAGE).reverse()
-              : []
-          }
+          data={tasks.data.Tasks?.slice(0, page * ITEMS_PER_PAGE)?.reverse()}
           renderItem={renderTask}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => (item?.id || item?._id)?.toString()}
           onEndReached={loadMoreTasks}
           onEndReachedThreshold={0.5}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListFooterComponent={
-            loading ? (
+            loading && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                  animating={true}
-                  size="small"
-                  color="#A0AEC0"
-                />
+                <ActivityIndicator size="small" color="#A0AEC0" />
               </View>
-            ) : null
+            )
           }
         />
+      ) : (
+        <Text style={styles.noTasksText}>No tasks available.</Text>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#ffffff" },
+  container: { flex: 1, padding: 16, backgroundColor: "#f0f0f0" },
   card: {
     marginBottom: 12,
-    backgroundColor: "#000",
+    backgroundColor: "#1a1a1a",
     borderRadius: 8,
     elevation: 2,
     padding: 8,
@@ -140,7 +138,7 @@ const styles = StyleSheet.create({
   },
   taskTitle: { color: "#ffffff", fontWeight: "600", fontSize: 18 },
   taskDescription: {
-    color: "#ffffff",
+    color: "#d0d0d0",
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,
@@ -148,7 +146,9 @@ const styles = StyleSheet.create({
   iconContainer: { flexDirection: "row", gap: 8 },
   iconButton: { backgroundColor: "#ffffff", borderRadius: 8, margin: 0 },
   divider: { backgroundColor: "#ffffff", marginVertical: 4 },
+  dateText: { color: "#ffffff", marginTop: 10 },
   loadingContainer: { paddingVertical: 16 },
+  noTasksText: { textAlign: "center", marginTop: 20, color: "#000" },
 });
 
 export default Index;

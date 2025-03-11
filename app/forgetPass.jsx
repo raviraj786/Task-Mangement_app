@@ -8,44 +8,43 @@ import {
 } from "react-native";
 import { TextInput, Button, Text, useTheme } from "react-native-paper";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useDispatch } from "react-redux";
-import { loginSuccess } from "../redux/authSlice";
-const Api_url = `https://task-mangemant-backend-server.onrender.com/api/v1/login`;
 
-const Login = () => {
+const forgetPass = () => {
   const router = useRouter();
   const { colors } = useTheme();
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const dispatch = useDispatch();
 
   const handleLogin = async () => {
     if (!validateEmail(email)) {
       setError("Please enter a valid email address");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
 
     setLoading(true);
-    setError("");
-
     try {
-      const response = await axios.post(`${Api_url}`, { email, password });
-      dispatch(loginSuccess(response.data.data));
-      router.replace("/HomeScreen");
+      const data = {
+        email: email,
+      };
+      // console.log(data);
+
+      const response = await axios.post(
+        `https://task-mangemant-backend-server.onrender.com/api/v1/forget-password`,
+        data
+      );
+      // console.log(response.data);
+      router.replace({
+        pathname: "/resetPass",
+        params: { email: email },
+      });
     } catch (err) {
-      // console.log(err);
-      const errorMessage =
-        err.response?.data?.err || "Login failed. Please try again.";
-      setError(errorMessage);
+      setError(err.response?.data?.error || "Login failed. Please try again.");
+      setLoading(true);
+    //   router.replace("/signup");
+    } finally {
       setLoading(false);
     }
   };
@@ -61,17 +60,8 @@ const Login = () => {
       style={styles.container}
     >
       <View style={styles.innerContainer}>
-        <Image
-          source={require("../assets/logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <Text variant="headlineMedium" style={styles.title}>
-          Welcome Back
-        </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          Please sign in to continue
+          Please forgot password in to continue
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -88,31 +78,6 @@ const Login = () => {
           textColor="#000"
         />
 
-        <TextInput
-          label="Password"
-          mode="outlined"
-          left={<TextInput.Icon icon="lock" />}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? "eye-off" : "eye"}
-              onPress={() => setShowPassword(!showPassword)}
-            />
-          }
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          style={styles.input}
-          textColor="#000"
-        />
-
-        <Button
-          mode="text"
-          onPress={() => router.push("/forgetPass")}
-          labelStyle={{ color: colors.onSecondary }}
-        >
-          Forget Password
-        </Button>
-
         <Button
           mode="contained"
           onPress={handleLogin}
@@ -121,8 +86,12 @@ const Login = () => {
           style={styles.button}
           labelStyle={styles.buttonLabel}
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Sending in..." : "Send OTP"}
         </Button>
+
+        <Text variant="bodyMedium" style={{ color: "red" , alignSelf:'center' , padding:10  , fontWeight:'700'  , fontSize:16}}>
+  OTP will expire in 10 minutes.
+</Text>
 
         <View style={styles.signupContainer}>
           <Text variant="bodyMedium" style={{ color: "#000" }}>
@@ -141,7 +110,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default forgetPass;
 
 const styles = StyleSheet.create({
   container: {

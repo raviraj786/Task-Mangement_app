@@ -10,17 +10,52 @@ const BASE_URL = "https://task-mangemant-backend-server.onrender.com/api/v1";
 
 export const fetchtasks = createAsyncThunk(
   "tasks/fetchTasks",
-  async (_, { rejectedWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
       const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        console.error("No token found. Please log in again.");
+        return rejectWithValue(
+          "Authentication Error: No token found. Please log in again."
+        );
+      }
+
+      // console.log("Stored Token:", token);
+
       const response = await axios.get(`${BASE_URL}/tasks`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      return response.data;
+
+      if (response?.status === 200) {
+        // console.log("Fetched Tasks Successfully:", response?.data);
+        return response.data;
+      } else {
+        // console.error("Failed to fetch tasks. Status Code:", response?.status);
+        return rejectWithValue("Failed to fetch tasks. Please try again.");
+      }
     } catch (error) {
-      return rejectedWithValue(error.response.data.error || error.message);
+      if (axios.isAxiosError(error)) {
+        // console.error("Axios Error:", error?.response?.data || error.message);
+
+        if (error.response?.status === 401) {
+          return rejectWithValue("Unauthorized. Please log in again.");
+        }
+
+        if (error.response?.status === 404) {
+          return rejectWithValue("Tasks not found.");
+        }
+
+        return rejectWithValue();
+        // error.response?.data?.error || "Failed to fetch tasks. Network or server error."
+      } else {
+        console.error("Unexpected Error:", error);
+        return rejectWithValue(
+          "An unexpected error occurred. Please try again."
+        );
+      }
     }
   }
 );
@@ -30,20 +65,23 @@ export const fetchtask = createAsyncThunk(
   async (id, { rejectedWithValue }) => {
     try {
       const token = await AsyncStorage.getItem("token");
-      console.log("ssssssss", token);
+      // console.log("ID: ", id);
       const response = await axios.get(
-        `http://192.168.1.8:5000/api/v1/tasks/${id}`,
+        `https://task-mangemant-backend-server.onrender.com/api/v1/tasks/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      console.log(response?.data);
+      // console.log("Response Data: ", response?.data);
       return response.data;
     } catch (error) {
-      console.log(error);
-      return rejectedWithValue(error.response.data.error || error.message);
+      // console.log("Error: ", error);
+      if (error.response) {
+        return rejectedWithValue(error.response.data.error || error.message);
+      }
+      return rejectedWithValue(error.message);
     }
   }
 );
@@ -69,7 +107,6 @@ export const addTask = createAsyncThunk(
 export const updateTask = createAsyncThunk(
   "tasks/updateTask",
   async ({ id, taskData }, { rejectWithValue }) => {
-    console.log("ssssssssss", id, taskData);
     try {
       const token = await AsyncStorage.getItem("token");
       console.log("update", token);
@@ -102,6 +139,7 @@ export const deleteTask = createAsyncThunk(
       });
       return id;
     } catch (error) {
+      console.log(error);
       return rejectedWithValue(error.response.data.error || error.message);
     }
   }
@@ -110,7 +148,7 @@ export const deleteTask = createAsyncThunk(
 const tasksSlice = createSlice({
   name: "tasks",
   initialState: {
-    tasks: [],
+    tasks: { data: { Tasks: [] } },
     task: null,
     loading: false,
     error: null,
@@ -125,28 +163,35 @@ const tasksSlice = createSlice({
       })
       .addCase(fetchtasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload;
+        state.tasks = action.payload; // Storing the entire response
       })
       .addCase(fetchtasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
       .addCase(fetchtask.fulfilled, (state, action) => {
         state.loading = false;
         state.task = action.payload;
       })
+
       .addCase(addTask.fulfilled, (state, action) => {
-        state.task.push(action.payload);
+        state.tasks.data.Tasks.push(action.payload.data);
       })
+
       .addCase(updateTask.fulfilled, (state, action) => {
-        console.log(state.task);
-        state.tasks = state.tasks.map((task) =>
-          task.id === action.payload.id ? action.payload : task
+        const index = state.tasks.data.Tasks.findIndex(
+          (task) => task.id === action.payload.data.id
         );
+        if (index !== -1) {
+          state.tasks.data.Tasks[index] = action.payload.data;
+        }
       })
 
       .addCase(deleteTask.fulfilled, (state, action) => {
-        state.tasks = state.tasks.filter((task) => task.id !== action.payload);
+        state.tasks.data.Tasks = state.tasks.data.Tasks.filter(
+          (task) => task.id !== action.payload
+        );
       });
   },
 });

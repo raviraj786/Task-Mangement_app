@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import { useRouter } from "expo-router";
 import { useSelector } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MyTaskScreen = () => {
   const [tasks, setTasks] = useState(
@@ -25,16 +26,26 @@ const MyTaskScreen = () => {
       {
         text: "Logout",
         onPress: async () => {
-          dispatch(logout());
-          router.replace("/login");
+          try {
+            await AsyncStorage.removeItem("token"); 
+            await AsyncStorage.removeItem("user"); 
+            await AsyncStorage.clear(); 
+            dispatch(logout()); 
+            router.replace("/login"); 
+          } catch (error) {
+            console.error("Failed to logout:", error);
+          }
         },
       },
     ]);
   };
+  
 
   if (!userdata) {
     return <Text>No user logged in.</Text>;
   }
+
+  // console.log(userdata.user.tasks.length)
 
   return (
     <View style={styles.container}>

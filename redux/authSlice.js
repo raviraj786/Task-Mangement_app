@@ -29,7 +29,7 @@ const authSlice = createSlice({
     loginSuccess: (state, action) => {
       state.token = action.payload.token;
       state.user = action.payload.user;
-      console.log(action.payload)
+      console.log(action.payload);
       AsyncStorage.setItem("token", action.payload.token);
       AsyncStorage.setItem("user", JSON.stringify(action.payload.user));
     },
@@ -37,6 +37,8 @@ const authSlice = createSlice({
       state.token = null;
       state.user = null;
       AsyncStorage.removeItem("token");
+      AsyncStorage.clear();
+      AsyncStorage.multiRemove(["token", "user", "tasks"]);
     },
   },
 });
