@@ -34,7 +34,8 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const { loading, error } = useSelector((state) => state.auth);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
     if (!validateEmail(email)) {
@@ -53,9 +54,8 @@ const Signup = () => {
       setError("Please accept the terms & conditions");
       return;
     }
-
+    setLoading(true);
     dispatch(registerStart());
-
     try {
       const response = await axios.post(`${Api_url}`, {
         username,
@@ -63,19 +63,22 @@ const Signup = () => {
         password,
       });
 
+      // console.log(response.data, "Dddddddhjjjjjjjjjjjjjjjj");
+
       if (response.data?.data) {
         dispatch(registerSuccess(response.data.data));
         router.push("/HomeScreen");
       } else {
-        throw new Error("Unexpected response from the server.");
+        setError("Unexpected response from the server.");
       }
-    } catch (err) {
-      console.error("Error: ", err.message);
-      dispatch(
-        registerFailure(
-          err.response?.data || "Registration failed. Please try again."
-        )
-      );
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.error ||
+        "Registration failed. Please try again.";
+      setError(errorMessage);
+      setLoading(false);
+
+      dispatch(registerFailure(errorMessage));
     }
   };
   const validateEmail = (email) => {
@@ -162,17 +165,19 @@ const Signup = () => {
             onPress={() => setTermsAccepted(!termsAccepted)}
             color={colors.onSecondary}
           />
-          <Text variant="bodyMedium" style={styles.termsText }>
+          <Text variant="bodyMedium" style={styles.termsText}>
             I agree to the{" "}
-            <Text style={{ color: colors.onSecondary }}>Terms & Conditions</Text>
+            <Text style={{ color: colors.onSecondary }}>
+              Terms & Conditions
+            </Text>
           </Text>
         </View>
 
         <Button
           mode="contained"
           onPress={handleSignup}
-          //  loading={loading}
-          // disabled={loading}
+          loading={loading}
+          disabled={loading}
           style={styles.button}
           labelStyle={styles.buttonLabel}
         >
@@ -180,7 +185,9 @@ const Signup = () => {
         </Button>
 
         <View style={styles.loginContainer}>
-          <Text variant="bodyMedium"  style={{color:'#000'}}>Already have an account? </Text>
+          <Text variant="bodyMedium" style={{ color: "#000" }}>
+            Already have an account?{" "}
+          </Text>
           <Button
             mode="text"
             onPress={() => router.push("/login")}
@@ -216,7 +223,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
     marginBottom: 8,
-    color:'#000'
+    color: "#000",
   },
   subtitle: {
     textAlign: "center",
@@ -230,11 +237,11 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 20,
     paddingVertical: 8,
-    backgroundColor:'#000'
+    backgroundColor: "#000",
   },
   buttonLabel: {
     fontSize: 16,
-    color:'#ffffff'
+    color: "#ffffff",
   },
   loginContainer: {
     flexDirection: "row",
@@ -255,7 +262,7 @@ const styles = StyleSheet.create({
   termsText: {
     flex: 1,
     marginLeft: 8,
-    color:'#000',
-    fontWeight:'800'
+    color: "#000",
+    fontWeight: "800",
   },
 });

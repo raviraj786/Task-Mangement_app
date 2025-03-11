@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Task-Mangement_app",
-    "slug": "Task-Mangement_app",
+    "name": "Task-Mangement",
+    "slug": "Task-Mangement",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/splash-icon.png",
@@ -21,7 +21,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/splash-icon.png"
     },
     "plugins": [
       "expo-router",

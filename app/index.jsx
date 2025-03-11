@@ -8,7 +8,7 @@ export default function Index() {
   useEffect(() => {
     const checkAuth = async () => {
       const userToken = await AsyncStorage.getItem("token");
-      console.log(userToken)
+      // console.log(userToken)
       if (userToken) {
         router.replace("/HomeScreen"); 
       } else {

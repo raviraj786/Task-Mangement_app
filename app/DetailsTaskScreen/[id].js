@@ -34,12 +34,21 @@ const DetailsTaskScreen = () => {
   const [inputTitle, setInputTitle] = useState("");
   const [inputDescription, setInputDescription] = useState("");
   const { task, loading, error } = useSelector((state) => state.tasks);
-  const [data, setData] = useState(...task.data);
+  const [data, setData] = useState([]);
+  const [selectdata, setSelectdata] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   useEffect(() => {
     if (id) {
       dispatch(fetchtask(id));
     }
   }, [id, dispatch]);
+
+  useEffect(() => {
+    if (task && task.data) {
+      setData(task.data);
+    }
+  }, [task]);
 
   const handleDelete = () => {
     Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
@@ -55,32 +64,26 @@ const DetailsTaskScreen = () => {
     ]);
   };
 
-  useEffect(() => {
-    if (task && task.data) {
-      setData(task.data);
-    }
-  }, [task]);
-
-  const [selectdata, setSelectdata] = useState(null);
-  const [inputText, setInputText] = useState("");
-
   const handleSelect = (item) => {
-    setSelectdata(item);
-    setInputTitle(item.title);
-    setInputDescription(item.description);
+    if (item) {
+      setSelectdata(item);
+      setInputTitle(item.title);
+      setInputDescription(item.description);
+      // console.log("Item Selected: ", item);
+    } else {
+      console.log("Item is null or undefined.");
+    }
   };
+
   const handleUpdate = async () => {
     if (selectdata) {
-      const newData = data.map((item) =>
+      const newData = data?.map((item) =>
         item.id === selectdata.id
           ? { ...item, title: inputTitle, description: inputDescription }
           : item
       );
       setData(newData);
       setSelectdata(null);
-
-      console.log(id, inputTitle, inputDescription);
-
       await dispatch(
         updateTask({
           id,
@@ -90,16 +93,6 @@ const DetailsTaskScreen = () => {
     }
     setInputTitle("");
     setInputDescription("");
-  };
-
-  const handleUpdateTask = (item) => {
-    setSelectdata(item);
-    setInputTitle(item.title);
-    setInputDescription(item.description);
-  };
-
-  const handleAddNewTask = () => {
-    console.log("first");
   };
 
   if (loading || !task) {
@@ -123,18 +116,17 @@ const DetailsTaskScreen = () => {
       <Header />
 
       {selectdata ? (
-        // Update view: sirf update karne waale fields dikhai denge
         <View style={styles.box}>
           <TextInput
             style={styles.input}
             label="Title"
-            value={inputTitle}
+            value={inputTitle || ""}
             onChangeText={(text) => setInputTitle(text)}
           />
           <TextInput
             style={styles.input}
             label="Description"
-            value={inputDescription}
+            value={inputDescription || ""}
             multiline
             numberOfLines={5}
             onChangeText={(text) => setInputDescription(text)}
@@ -164,6 +156,12 @@ const DetailsTaskScreen = () => {
                 style={styles.touchable}
                 onPress={() => handleSelect(item)}
               >
+                <Text
+                  style={{ marginLeft: 180, color: "#000", marginBottom: 5 }}
+                >
+                  {new Date(item?.createAt).toLocaleString()}
+                </Text>
+
                 <Text style={styles.taskTitle}>Title: {item.title}</Text>
                 <Text style={styles.taskDescription}>
                   Description: {item.description}
@@ -176,14 +174,13 @@ const DetailsTaskScreen = () => {
 
       <View>
         <FloatingUpdateButton
-          onPress={handleUpdateTask}
-          title={"Update Task"}
+          onPress={() => {
+            router.push("/task/addTaskScreen");
+          }}
+          title={"Add New Task"}
         />
 
-        <FloatingAddTaskButton
-          onPress={handleDelete}
-          title="Delete Task"
-        />
+        <FloatingAddTaskButton onPress={handleDelete} title="Delete Task" />
       </View>
     </View>
   );
@@ -241,15 +238,14 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   taskContainer: {
-    backgroundColor: "#fff",
-    // borderRadius: 8,
-    // marginBottom: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    margin: 10,
     padding: 15,
-    // shadowColor: "#000",
-    // shadowOpacity: 0.1,
-    // shadowRadius: 4,
-    // elevation: 3,
-    flex: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   touchable: {
     flex: 1,
