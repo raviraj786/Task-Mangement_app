@@ -2,6 +2,10 @@
 
 # dependencies
 node_modules/
+android/
+.android
+android
+yarn.lock
 
 # Expo
 .expo/
